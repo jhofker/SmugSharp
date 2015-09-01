@@ -134,6 +134,7 @@ namespace SmugSharp
             var signature = OAuth.OAuthBase.GetSignature(
                 url,
                 string.Join("&", parameters.OrderBy(h => h.Key).Select(h => $"{h.Key}={h.Value}")),
+                ApiSecret,
                 OAuthTokenSecret);
             parameters.Add("oauth_signature", signature);
 

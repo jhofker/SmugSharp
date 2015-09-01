@@ -79,11 +79,11 @@ namespace OAuth
                 Uri.EscapeDataString(CryptographicBuffer.EncodeToBase64String(CryptographicEngine.Sign(cryptoKey, dataString)));
         }
 
-        public static string GetSignature(string url, string data, string secretKey)
+        public static string GetSignature(string url, string data, string apiSecret, string secretKey)
         {
             var HmacSha1Provider = MacAlgorithmProvider.OpenAlgorithm(MacAlgorithmNames.HmacSha1);
 
-            var keyMaterial = CryptographicBuffer.ConvertStringToBinary(secretKey + "&", BinaryStringEncoding.Utf8);
+            var keyMaterial = CryptographicBuffer.ConvertStringToBinary(apiSecret + "&" + secretKey, BinaryStringEncoding.Utf8);
             var cryptoKey = HmacSha1Provider.CreateKey(keyMaterial);
 
             var baseStringForSig = "GET&" + Uri.EscapeDataString(url) + "&" + Uri.EscapeDataString(data);
