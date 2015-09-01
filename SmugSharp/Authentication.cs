@@ -174,12 +174,13 @@ namespace SmugSharp
         /// </summary>
         /// <param name="url">The URL to generate headers (and signature) to.</param>
         /// <returns>Key-value pairs representing the oauth pairs in the Authorization header.</returns>
-        public Dictionary<string, string> GetAuthHeaders(string url)
+        public Dictionary<string, string> GetAuthHeaders(string method, string url)
         {
             var parameters = OAuth.OAuthBase.GetOAuthParameters(ApiKey);
             parameters.Add("oauth_token", OAuthToken);
 
             var signature = OAuth.OAuthBase.GetSignature(
+                method,
                 url,
                 string.Join("&", parameters.OrderBy(h => h.Key).Select(h => $"{h.Key}={h.Value}")),
                 ApiSecret,
