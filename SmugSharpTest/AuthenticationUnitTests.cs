@@ -40,5 +40,26 @@ namespace SmugSharpTest
 
             Assert.IsTrue(authUrl.StartsWith("https"), "Authorization url must be secure.");
         }
+
+        [TestMethod]
+        public void TestViewportScale()
+        {
+            var smugmug = new SmugMug(ApiKey, ApiSecret, CallbackUrl);
+            var min = 0.0;
+            var max = 1.0;
+            var over = 100.0;
+            var under = -100.0;
+
+            Assert.AreEqual(smugmug.Authentication.ViewportScale, min, "Viewport should default to 0.0");
+
+            smugmug.Authentication.ViewportScale = max;           
+            Assert.AreEqual(smugmug.Authentication.ViewportScale, max);
+
+            smugmug.Authentication.ViewportScale = over;
+            Assert.AreEqual(smugmug.Authentication.ViewportScale, max);
+
+            smugmug.Authentication.ViewportScale = under;
+            Assert.AreEqual(smugmug.Authentication.ViewportScale, min);
+        }
     }
 }
