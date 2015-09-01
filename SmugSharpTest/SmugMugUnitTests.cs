@@ -45,5 +45,15 @@ namespace SmugSharpTest
 
             Assert.IsFalse(response.Contains("\"Code\":4"));
         }
+
+        [TestMethod]
+        public async Task TestGetCurrentUserNotNull()
+        {
+            var smugmug = new SmugMug(AccessToken, AccessTokenSecret, ApiKey, ApiSecret, CallbackUrl);
+
+            var user = await smugmug.GetCurrentUser();
+
+            Assert.IsNotNull(user);
+        }
     }
 }
