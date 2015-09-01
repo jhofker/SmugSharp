@@ -14,7 +14,12 @@ namespace OAuth
 {
     public class OAuthBase
     {
-
+        /// <summary>
+        /// Creates the necessary OAuth parameters for a given ApiKey and callback url.
+        /// </summary>
+        /// <param name="apikey">The consuming app's api key.</param>
+        /// <param name="callbackUrl">The callback url to send to the api.</param>
+        /// <returns></returns>
         public static Dictionary<string, string> GetOAuthParameters(string apikey, string callbackUrl = null)
         {
             var random = new Random();
@@ -37,6 +42,15 @@ namespace OAuth
             return parameters;
         }
 
+        /// <summary>
+        /// Generates a signed url for a given set of parameters, secret, destination url, and secret key.
+        /// </summary>
+        /// <param name="parameters">Url parameters</param>
+        /// <param name="oauthTokenSecret">The OAuth token secret from the api.</param>
+        /// <param name="url">The url to sign.</param>
+        /// <param name="secretKey">The secret half of the api key.</param>
+        /// <param name="exchangeStep">Indicates whether or not to include the token secret when generating the signing key.</param>
+        /// <returns>A signed url</returns>
         public static string CalculateOAuthSignedUrl(Dictionary<string, string> parameters, string oauthTokenSecret, string url, string secretKey, bool exchangeStep)
         {
             var baseString = new StringBuilder();
@@ -79,19 +93,34 @@ namespace OAuth
                 Uri.EscapeDataString(CryptographicBuffer.EncodeToBase64String(CryptographicEngine.Sign(cryptoKey, dataString)));
         }
 
-        public static string GetSignature(string url, string data, string apiSecret, string secretKey)
+        /// <summary>
+        /// Generates a HMAC-SHA1 signature for a given set of parameters
+        /// </summary>
+        /// <param name="method">The HTTP method that will be used. (GET, POST, PATCH, PUT, DELETE)</param>
+        /// <param name="url">The destination url.</param>
+        /// <param name="data">Data that will be included in the request</param>
+        /// <param name="apiSecret">The Api secret. Used for signing.</param>
+        /// <param name="secretKey">The access token secret. Used for signing.</param>
+        /// <returns></returns>
+        public static string GetSignature(string method, string url, string data, string apiSecret, string secretKey)
         {
             var HmacSha1Provider = MacAlgorithmProvider.OpenAlgorithm(MacAlgorithmNames.HmacSha1);
 
             var keyMaterial = CryptographicBuffer.ConvertStringToBinary(apiSecret + "&" + secretKey, BinaryStringEncoding.Utf8);
             var cryptoKey = HmacSha1Provider.CreateKey(keyMaterial);
 
-            var baseStringForSig = "GET&" + Uri.EscapeDataString(url) + "&" + Uri.EscapeDataString(data);
+            var baseStringForSig = $"{method}&{Uri.EscapeDataString(url)}&{Uri.EscapeDataString(data)}";
             var dataString = CryptographicBuffer.ConvertStringToBinary(baseStringForSig, BinaryStringEncoding.Utf8);
 
             return Uri.EscapeDataString(CryptographicBuffer.EncodeToBase64String(CryptographicEngine.Sign(cryptoKey, dataString)));
         }
 
+        /// <summary>
+        /// Does a POST to a url and returns the response.
+        /// </summary>
+        /// <param name="url">The destination url.</param>
+        /// <returns>The response from the endpoint.</returns>
+        /// <remarks>Will likely go away in future releases.</remarks>
         public async static Task<string> GetResponseFromWeb(string url)
         {
             var Request = (HttpWebRequest)WebRequest.Create(url);
