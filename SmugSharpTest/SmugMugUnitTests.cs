@@ -25,11 +25,23 @@ namespace SmugSharpTest
         }
 
         [TestMethod]
-        public async Task TestAuthorization()
+        public async Task TestGetResponseWithHeaders()
         {
             var smugmug = new SmugMug(AccessToken, AccessTokenSecret, ApiKey, ApiSecret, CallbackUrl);
 
             var authUserUrl = $"{SmugMug.BaseApiUrl}!authuser";
+            var response = await smugmug.GetResponseWithHeaders(authUserUrl);
+
+            Logger.LogMessage(response);
+            Assert.IsFalse(response.Contains("\"Code\":4"));
+        }
+
+        [TestMethod]
+        public async Task TestGetPublicResponse()
+        {
+            var smugmug = new SmugMug(AccessToken, AccessTokenSecret, ApiKey, ApiSecret, CallbackUrl);
+
+            var authUserUrl = $"{SmugMug.BaseApiUrl}/user/cmac";
             var response = await smugmug.GetResponseWithHeaders(authUserUrl);
 
             Logger.LogMessage(response);
