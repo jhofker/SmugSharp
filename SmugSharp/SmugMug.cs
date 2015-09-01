@@ -74,7 +74,7 @@ namespace SmugSharp
         /// <remarks>Will likely go away in the future.</remarks>
         public async Task<string> GetResponseWithHeaders(string url)
         {
-            var headers = Authentication.GetAuthHeaders(url);
+            var headers = Authentication.GetAuthHeaders("GET", url);
 
             var request = new HttpClient();
 
