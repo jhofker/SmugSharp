@@ -6,6 +6,9 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using SmugSharp.Models;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
 using Windows.Storage.Streams;
@@ -39,6 +42,9 @@ namespace SmugSharp
         /// </summary>
         public Authentication Authentication { get; private set; }
 
+
+        public User CurrentUser { get; set; }
+
         /// <summary>
         /// The ctor to use in testing or situations where you already have the auth token and secret.
         /// </summary>
@@ -64,6 +70,16 @@ namespace SmugSharp
         {
             ApiKey = apiKey;
             Authentication = new Authentication(ApiKey, apiSecret, callbackUrl);
+        }
+
+        public async Task<User> GetCurrentUser()
+        {
+            var authUserUrl = $"{BaseApiUrl}!authuser";
+            var response = await GetResponseWithHeaders(authUserUrl);
+            
+            CurrentUser = User.FromResponse(response);
+
+            return CurrentUser;
         }
 
         /// <summary>
