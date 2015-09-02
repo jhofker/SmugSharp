@@ -158,5 +158,21 @@ namespace SmugSharp.Models
 
             return user;
         }
+
+        public async Task<Image> GetBioImage()
+        {
+            var bioImageUrl = $"{SmugMug.BaseUrl}{BioImageUri}";
+            var response = await SmugMug.GetResponseWithHeaders(bioImageUrl);
+
+            return Image.FromJson(response);
+        }
+
+        public async Task<Node> GetRootNode()
+        {
+            var rootNodeUrl = $"{SmugMug.BaseUrl}{NodeUri}";
+            var response = await SmugMug.GetResponseWithHeaders(rootNodeUrl);
+
+            return Node.FromJson(response);
+        }
     }
 }
