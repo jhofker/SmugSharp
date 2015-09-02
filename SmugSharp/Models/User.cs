@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace SmugSharp.Models
-{        
+{
     public enum AccountStatus { Active, PastDue, Suspended, Closed }
     public enum SortBy { LastUpdated, Position }
 
@@ -114,11 +114,47 @@ namespace SmugSharp.Models
         private string UserContactsUri { get; set; }
         #endregion
 
-        public static User FromResponse(string response)
+        public static User FromJson(string response)
         {
             var responseObj = JObject.Parse(response);
             var jUserObj = responseObj["Response"]["User"];
+            var jUserUris = jUserObj["Uris"];
+
             var user = JsonConvert.DeserializeObject<User>(jUserObj.ToString());
+
+            if (jUserUris != null)
+            {
+                user.BioImageUri = jUserUris["BioImage"]["Uri"].ToString();
+                user.CoverImageUri = jUserUris["CoverImage"]["Uri"].ToString();
+                user.UserProfileUri = jUserUris["UserProfile"]["Uri"].ToString();
+                user.NodeUri = jUserUris["Node"]["Uri"].ToString();
+                user.FolderUri = jUserUris["Folder"]["Uri"].ToString();
+                user.UserAlbumsUri = jUserUris["UserAlbums"]["Uri"].ToString();
+                user.UserGeoMediaUri = jUserUris["UserGeoMedia"]["Uri"].ToString();
+                user.UserPopularMediaUri = jUserUris["UserPopularMedia"]["Uri"].ToString();
+                user.UserFeaturedAlbumsUri = jUserUris["UserFeaturedAlbums"]["Uri"].ToString();
+                user.UserRecentImagesUri = jUserUris["UserRecentImages"]["Uri"].ToString();
+                user.UserImageSearchUri = jUserUris["UserImageSearch"]["Uri"].ToString();
+                user.UserTopKeywordsUri = jUserUris["UserTopKeywords"]["Uri"].ToString();
+                user.UrlPathLookupUri = jUserUris["UrlPathLookup"]["Uri"].ToString();
+                user.UserAlbumTemplatesUri = jUserUris["UserAlbumTemplates"]["Uri"].ToString();
+                user.SortUserFeaturedAlbumsUri = jUserUris["SortUserFeaturedAlbums"]["Uri"].ToString();
+                user.UserTasksUri = jUserUris["UserTasks"]["Uri"].ToString();
+                user.UserWatermarksUri = jUserUris["UserWatermarks"]["Uri"].ToString();
+                user.UserPrintmarksUri = jUserUris["UserPrintmarks"]["Uri"].ToString();
+                user.UserUploadLimitsUri = jUserUris["UserUploadLimits"]["Uri"].ToString();
+                user.UserCouponsUri = jUserUris["UserCoupons"]["Uri"].ToString();
+                user.UserLatestQuickNewsUri = jUserUris["UserLatestQuickNews"]["Uri"].ToString();
+                user.UserGuideStatesUri = jUserUris["UserGuideStates"]["Uri"].ToString();
+                user.UserHideGuidesUri = jUserUris["UserHideGuides"]["Uri"].ToString();
+                user.FeaturesUri = jUserUris["Features"]["Uri"].ToString();
+                user.UserGrantsUri = jUserUris["UserGrants"]["Uri"].ToString();
+                user.DuplicateImageSearchUri = jUserUris["DuplicateImageSearch"]["Uri"].ToString();
+                user.UserDeletedAlbumsUri = jUserUris["UserDeletedAlbums"]["Uri"].ToString();
+                user.UserDeletedFoldersUri = jUserUris["UserDeletedFolders"]["Uri"].ToString();
+                user.UserDeletedPagesUri = jUserUris["UserDeletedPages"]["Uri"].ToString();
+                user.UserContactsUri = jUserUris["UserContacts"]["Uri"].ToString();
+            }
 
             return user;
         }
