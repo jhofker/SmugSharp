@@ -21,6 +21,9 @@ namespace SmugSharp
     /// </summary>
     public class SmugMug
     {
+        public static SmugMug Instance { get; private set; }
+
+        public const string BaseUrl = "https://api.smugmug.com";
         /// <summary>
         /// The base url of the SmugMug v2 api.
         /// </summary>
@@ -58,6 +61,8 @@ namespace SmugSharp
             ApiKey = apiKey;
             AuthToken = authToken;
             Authentication = new Authentication(authToken, authSecret, ApiKey, apiSecret, callbackUrl);
+
+            Instance = this;
         }
 
         /// <summary>
@@ -70,14 +75,19 @@ namespace SmugSharp
         {
             ApiKey = apiKey;
             Authentication = new Authentication(ApiKey, apiSecret, callbackUrl);
+
+            Instance = this;
         }
 
         public async Task<User> GetCurrentUser()
         {
-            var authUserUrl = $"{BaseApiUrl}!authuser";
-            var response = await GetResponseWithHeaders(authUserUrl);
-            
-            CurrentUser = User.FromResponse(response);
+            if (CurrentUser == null)
+            {
+                var authUserUrl = $"{BaseApiUrl}!authuser";
+                var response = await GetResponseWithHeaders(authUserUrl);
+
+                CurrentUser = User.FromJson(response);
+            }
 
             return CurrentUser;
         }
@@ -88,9 +98,9 @@ namespace SmugSharp
         /// <param name="url">The destination url</param>
         /// <returns>The response from the request</returns>
         /// <remarks>Will likely go away in the future.</remarks>
-        public async Task<string> GetResponseWithHeaders(string url)
+        public static async Task<string> GetResponseWithHeaders(string url)
         {
-            var headers = Authentication.GetAuthHeaders("GET", url);
+            var headers = SmugMug.Instance.Authentication.GetAuthHeaders("GET", url);
 
             var request = new HttpClient();
 
