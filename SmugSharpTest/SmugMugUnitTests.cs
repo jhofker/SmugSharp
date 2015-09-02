@@ -1,19 +1,13 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using SmugSharp;
+using SmugSharpTest.Configuration;
 
 namespace SmugSharpTest
 {
     [TestClass]
-    public class UnitTest1
+    public class SmugMugUnitTests : UnitTestsBase
     {
-        private string ApiKey { get { return Configuration.Authentication.ApiKey; } }
-        private string ApiSecret { get { return Configuration.Authentication.ApiSecret; } }
-        private string CallbackUrl { get { return Configuration.Authentication.CallbackUrl; } }
-        private string AccessToken { get { return Configuration.Authentication.AccessToken; } }
-        private string AccessTokenSecret { get { return Configuration.Authentication.AccessTokenSecret; } }
-
-
         [TestMethod]
         public void TestSmugMugCtorWorks()
         {
@@ -30,7 +24,7 @@ namespace SmugSharpTest
             var smugmug = new SmugMug(AccessToken, AccessTokenSecret, ApiKey, ApiSecret, CallbackUrl);
 
             var authUserUrl = $"{SmugMug.BaseApiUrl}!authuser";
-            var response = await smugmug.GetResponseWithHeaders(authUserUrl);
+            var response = await SmugMug.GetResponseWithHeaders(authUserUrl);
 
             Assert.IsFalse(response.Contains("\"Code\":4"));
         }
@@ -41,7 +35,7 @@ namespace SmugSharpTest
             var smugmug = new SmugMug(AccessToken, AccessTokenSecret, ApiKey, ApiSecret, CallbackUrl);
 
             var authUserUrl = $"{SmugMug.BaseApiUrl}/user/cmac";
-            var response = await smugmug.GetResponseWithHeaders(authUserUrl);
+            var response = await SmugMug.GetResponseWithHeaders(authUserUrl);
 
             Assert.IsFalse(response.Contains("\"Code\":4"));
         }
@@ -54,6 +48,6 @@ namespace SmugSharpTest
             var user = await smugmug.GetCurrentUser();
 
             Assert.IsNotNull(user);
-        }
+        }  
     }
 }
