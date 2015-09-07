@@ -1,19 +1,13 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using SmugSharp;
+using SmugSharpTest.Configuration;
 
 namespace SmugSharpTest
 {
     [TestClass]
-    public class AuthenticationUnitTests
-    {
-        private string ApiKey { get { return Configuration.Authentication.ApiKey; } }
-        private string ApiSecret { get { return Configuration.Authentication.ApiSecret; } }
-        private string CallbackUrl { get { return Configuration.Authentication.CallbackUrl; } }
-        private string AccessToken { get { return Configuration.Authentication.AccessToken; } }
-        private string AccessTokenSecret { get { return Configuration.Authentication.AccessTokenSecret; } }
-                              
-
+    public class AuthenticationUnitTests : UnitTestsBase
+    {                                              
         [TestMethod]
         public async Task TestGetRequestTokenForApiKey()
         {

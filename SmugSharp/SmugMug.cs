@@ -6,6 +6,9 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using SmugSharp.Models;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
 using Windows.Storage.Streams;
@@ -18,6 +21,9 @@ namespace SmugSharp
     /// </summary>
     public class SmugMug
     {
+        public static SmugMug Instance { get; private set; }
+
+        public const string BaseUrl = "https://api.smugmug.com";
         /// <summary>
         /// The base url of the SmugMug v2 api.
         /// </summary>
@@ -39,6 +45,9 @@ namespace SmugSharp
         /// </summary>
         public Authentication Authentication { get; private set; }
 
+
+        public User CurrentUser { get; set; }
+
         /// <summary>
         /// The ctor to use in testing or situations where you already have the auth token and secret.
         /// </summary>
@@ -52,6 +61,8 @@ namespace SmugSharp
             ApiKey = apiKey;
             AuthToken = authToken;
             Authentication = new Authentication(authToken, authSecret, ApiKey, apiSecret, callbackUrl);
+
+            Instance = this;
         }
 
         /// <summary>
@@ -64,6 +75,21 @@ namespace SmugSharp
         {
             ApiKey = apiKey;
             Authentication = new Authentication(ApiKey, apiSecret, callbackUrl);
+
+            Instance = this;
+        }
+
+        public async Task<User> GetCurrentUser()
+        {
+            if (CurrentUser == null)
+            {
+                var authUserUrl = $"{BaseApiUrl}!authuser";
+                var response = await GetResponseWithHeaders(authUserUrl);
+
+                CurrentUser = User.FromJson(response);
+            }
+
+            return CurrentUser;
         }
 
         /// <summary>
@@ -72,9 +98,9 @@ namespace SmugSharp
         /// <param name="url">The destination url</param>
         /// <returns>The response from the request</returns>
         /// <remarks>Will likely go away in the future.</remarks>
-        public async Task<string> GetResponseWithHeaders(string url)
+        public static async Task<string> GetResponseWithHeaders(string url)
         {
-            var headers = Authentication.GetAuthHeaders("GET", url);
+            var headers = SmugMug.Instance.Authentication.GetAuthHeaders("GET", url);
 
             var request = new HttpClient();
 

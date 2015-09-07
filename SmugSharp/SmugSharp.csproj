@@ -114,6 +114,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Authentication.cs" />
+    <Compile Include="Models\Image.cs" />
+    <Compile Include="Models\Node.cs" />
+    <Compile Include="Models\User.cs" />
     <Compile Include="SmugMug.cs" />
     <Compile Include="OAuth.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
