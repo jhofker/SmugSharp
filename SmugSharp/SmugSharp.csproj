@@ -119,6 +119,13 @@
     <Compile Include="Models\Image.cs" />
     <Compile Include="Models\Node.cs" />
     <Compile Include="Models\User.cs" />
+    <Compile Include="OAuth\OAuthRequest.cs" />
+    <Compile Include="OAuth\OAuthRequestType.cs" />
+    <Compile Include="OAuth\OAuthSignatureMethod.cs" />
+    <Compile Include="OAuth\OAuthSignatureTreatment.cs" />
+    <Compile Include="OAuth\OAuthTools.cs" />
+    <Compile Include="OAuth\WebParameter.cs" />
+    <Compile Include="OAuth\WebParameterCollection.cs" />
     <Compile Include="SmugMug.cs" />
     <Compile Include="OAuth.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
