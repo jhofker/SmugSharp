@@ -24,8 +24,10 @@ namespace SmugSharp
         private string ApiKey;
         private string ApiSecret;
         private string CallbackUrl;
-        private string OAuthToken;
-        private string OAuthTokenSecret;
+        private string OAuthRequestToken;
+        private string OAuthRequestTokenSecret;
+        private string OAuthAccessToken;
+        private string OAuthAccessTokenSecret;
 
         /// <summary>
         /// The level of data the app has access to.
@@ -92,20 +94,23 @@ namespace SmugSharp
             }
         }
 
-        public const string RequestTokenUrl = "https://api.smugmug.com/services/oauth/1.0a/getRequestToken";
-        public const string UserAuthorizationUrl = "https://api.smugmug.com/services/oauth/1.0a/authorize";
-        public const string AccessTokenUrl = " https://api.smugmug.com/services/oauth/1.0a/getAccessToken";
+        public const string RequestTokenUrl = "https://secure.smugmug.com/services/oauth/1.0a/getRequestToken";
+        public const string UserAuthorizationUrl = "https://secure.smugmug.com/services/oauth/1.0a/authorize";
+        public const string AccessTokenUrl = " https://secure.smugmug.com/services/oauth/1.0a/getAccessToken";
 
         public Authentication(string authToken, string authSecret, string apiKey, string apiSecret, string callbackUrl)
         {
-            OAuthToken = authToken;
-            OAuthTokenSecret = authSecret;
+            OAuthAccessToken = authToken;
+            OAuthAccessTokenSecret = authSecret;
 
             ApiKey = apiKey;
             ApiSecret = apiSecret;
             CallbackUrl = callbackUrl;
 
             InitializeDefaults();
+
+            AccessLevel = Access.Full;
+            PermissionsLevel = Permissions.Modify;
         }
 
         public Authentication(string apiKey, string apiSecret, string callbackUrl)
@@ -115,6 +120,9 @@ namespace SmugSharp
             CallbackUrl = callbackUrl;
 
             InitializeDefaults();
+
+            AccessLevel = Access.Full;
+            PermissionsLevel = Permissions.Modify;
         }
 
         /// <summary>
@@ -135,12 +143,14 @@ namespace SmugSharp
         /// Generates the proper authorization url to which the user should be directed.
         /// </summary>
         /// <returns></returns>
-        public string GetAuthorizationUrl()
+        public async Task<string> GetAuthorizationUrl()
         {
             var allowThirdPartyLogin = AllowThirdPartyLogin ? 1 : 0;
+            var oauthToken = await GetRequestToken();
 
             return $"{UserAuthorizationUrl}" +
-                $"?Access={AccessLevel}&Permissions={PermissionsLevel}" +
+                $"?oauth_token={oauthToken}" +
+                $"&Access={AccessLevel}&Permissions={PermissionsLevel}" +
                 $"&allowThirdPartyLogin={allowThirdPartyLogin}&showSignUpButton={ShowSignUpButton}&username={DefaultUsername}&viewportScale={ViewportScale}";
         }
 
@@ -156,17 +166,17 @@ namespace SmugSharp
                 throw new ArgumentException("ApiKey must be set.");
             }
 
-            if (string.IsNullOrWhiteSpace(OAuthToken))
-            {                                   
+            if (string.IsNullOrWhiteSpace(OAuthRequestToken))
+            {
                 var parameters = OAuth.OAuthBase.GetOAuthParameters(ApiKey, CallbackUrl);
-                var url = OAuth.OAuthBase.CalculateOAuthSignedUrl(parameters, null, Authentication.RequestTokenUrl, ApiSecret, false);
+                var url = OAuth.OAuthBase.CalculateOAuthSignedUrl(parameters, null, RequestTokenUrl, ApiSecret);
 
                 var response = await OAuth.OAuthBase.GetResponseFromWeb(url);
 
-                ParseRequestToken(response);
+                ParseTokenResult(response);
             }
 
-            return OAuthToken;
+            return OAuthRequestToken;
         }
 
         /// <summary>
@@ -174,27 +184,68 @@ namespace SmugSharp
         /// </summary>
         /// <param name="url">The URL to generate headers (and signature) to.</param>
         /// <returns>Key-value pairs representing the oauth pairs in the Authorization header.</returns>
-        public Dictionary<string, string> GetAuthHeaders(string method, string url)
+        public async Task<Dictionary<string, string>> GetAuthHeaders(string method, string url)
         {
             var parameters = OAuth.OAuthBase.GetOAuthParameters(ApiKey);
-            parameters.Add("oauth_token", OAuthToken);
+            parameters.Add("oauth_token", await GetRequestToken());
 
             var signature = OAuth.OAuthBase.GetSignature(
                 method,
                 url,
-                string.Join("&", parameters.OrderBy(h => h.Key).Select(h => $"{h.Key}={h.Value}")),
+                parameters,
                 ApiSecret,
-                OAuthTokenSecret);
+                OAuthAccessTokenSecret);
             parameters.Add("oauth_signature", signature);
 
             return parameters;
+        }
+
+        public async void GetAccessToken(string authorizationResult)
+        {
+            var verifier = ParseAuthorizationResult(authorizationResult);
+
+            //TODO: This is calling the wrong direction...
+
+            if (!string.IsNullOrWhiteSpace(verifier))
+            {
+                var verifierKvp = new KeyValuePair<string, string>("oauth_verifier", verifier);
+                var parameters = OAuth.OAuthBase.GetOAuthParameters(ApiKey, CallbackUrl);
+                parameters.Add("oauth_token", OAuthRequestToken);
+                parameters.Add(verifierKvp.Key, verifierKvp.Value);
+
+                var url = OAuth.OAuthBase.CalculateOAuthSignedUrl(
+                    parameters, 
+                    null, 
+                    AccessTokenUrl, 
+                    ApiSecret);
+
+                var extraHeader = new Dictionary<string, string>();
+                extraHeader.Add(verifierKvp.Key, verifierKvp.Value);
+                var response = await SmugMug.GetResponseWithHeaders(url, "POST", extraHeader, $"{verifierKvp.Key}={verifierKvp.Value}");
+
+                ParseTokenResult(response, isAccessToken: true);
+            }
+        }
+
+        private string ParseAuthorizationResult(string authData)
+        {
+            if (string.IsNullOrWhiteSpace(authData))
+            {
+                return null;
+            }
+
+            var identifier = "oauth_verifier=";
+            var index = authData.IndexOf(identifier) + identifier.Length;
+            var verifier = authData.Substring(index, 6);
+
+            return verifier;
         }
 
         /// <summary>
         /// Parses the request token response and splits out the token and secret.
         /// </summary>
         /// <param name="response">The response from the API.</param>
-        private void ParseRequestToken(string response)
+        private void ParseTokenResult(string response, bool isAccessToken = false)
         {
             var keyValPairs = response.Split('&');
             for (int i = 0; i < keyValPairs.Length; i++)
@@ -204,12 +255,27 @@ namespace SmugSharp
                 {
                     case "oauth_token":
                         {
-                            OAuthToken = splits[1];
+                            if (isAccessToken)
+                            {
+                                OAuthAccessToken = splits[1];
+                            }
+                            else
+                            {
+                                OAuthRequestToken = splits[1];
+                            }
                             break;
                         }
                     case "oauth_token_secret":
                         {
-                            OAuthTokenSecret = splits[1];
+
+                            if (isAccessToken)
+                            {
+                                OAuthAccessTokenSecret = splits[1];
+                            }
+                            else
+                            {
+                                OAuthRequestTokenSecret = splits[1];
+                            }
                             break;
                         }
                 }

@@ -24,6 +24,7 @@ namespace SmugSharp
         public static SmugMug Instance { get; private set; }
 
         public const string BaseUrl = "https://api.smugmug.com";
+        public const string OAuthBaseUrl = "https://secure.smugmug.com";
         /// <summary>
         /// The base url of the SmugMug v2 api.
         /// </summary>
@@ -93,24 +94,36 @@ namespace SmugSharp
         }
 
         /// <summary>
-        /// Performs and authenticated request to a given url.
+        /// Performs an authenticated request to a given url.
         /// </summary>
         /// <param name="url">The destination url</param>
         /// <returns>The response from the request</returns>
         /// <remarks>Will likely go away in the future.</remarks>
-        public static async Task<string> GetResponseWithHeaders(string url)
+        public static async Task<string> GetResponseWithHeaders(string url, string method = "GET", Dictionary<string, string> extraHeaders = null, string postContent = null)
         {
-            var headers = SmugMug.Instance.Authentication.GetAuthHeaders("GET", url);
+            var headers = await SmugMug.Instance.Authentication.GetAuthHeaders(method, url);
+            if (extraHeaders != null)
+            {
+                foreach (var header in extraHeaders)
+                {
+                    headers.Add(header.Key, header.Value);
+                }
+            }
 
             var request = new HttpClient();
 
             request.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue(
                     "OAuth",
-                    string.Join(", ", headers.OrderBy(h => h.Key).Select(h => $"{h.Key}=\"{h.Value}\"")));
-            request.DefaultRequestHeaders.Add("accept", "application/json");
+                    string.Join(", ", headers.OrderBy(h => h.Key).Select(h => $"{Uri.EscapeDataString(h.Key)}=\"{Uri.EscapeDataString(h.Value)}\"")));
+            request.DefaultRequestHeaders.Add("Accept", "application/json");
+            if (method == "POST")
+            {
+                request.DefaultRequestHeaders.Add("Content-Type", "application/json");
+            }
 
-            var response = await request.GetAsync(url);
+            var response = method == "GET" ? await request.GetAsync(url) :
+                           method == "POST" ? await request.PostAsync(url, new StringContent(postContent ?? string.Empty)) : null;
 
             string httpResponse = null;
             if (response != null)

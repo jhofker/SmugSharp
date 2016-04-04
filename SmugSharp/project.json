@@ -1,5 +1,6 @@
 ﻿{
   "dependencies": {
+    "enough.oauth": "0.9.8",
     "Microsoft.NETCore.UniversalWindowsPlatform": "5.0.0",
     "Newtonsoft.Json": "7.0.1"
   },

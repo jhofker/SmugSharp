@@ -28,9 +28,10 @@ namespace SmugSharpTest
             var smugmug = new SmugMug(ApiKey, ApiSecret, CallbackUrl);
             var requestToken = await smugmug.Authentication.GetRequestToken();
 
-            var authUrl = smugmug.Authentication.GetAuthorizationUrl();
+            var authUrl = await smugmug.Authentication.GetAuthorizationUrl();
 
             Assert.IsNotNull(authUrl);
+            Assert.IsTrue(authUrl.Contains("oauth_token"));
 
             Assert.IsTrue(authUrl.StartsWith("https"), "Authorization url must be secure.");
         }
