@@ -22,11 +22,10 @@ namespace OAuth
         /// <returns></returns>
         public static Dictionary<string, string> GetOAuthParameters(string apikey, string callbackUrl = null)
         {
-            var random = new Random();
             var epochDate = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var timespan = DateTime.UtcNow - epochDate;
             var oauthTimestamp = Math.Round(timespan.TotalSeconds).ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
-            var oauthNonce = random.Next(100000000, 999999999).ToString();
+            var oauthNonce = CryptographicBuffer.GenerateRandomNumber().ToString();
 
             var parameters = new Dictionary<string, string>();
             if (!string.IsNullOrWhiteSpace(callbackUrl))
