@@ -13,11 +13,11 @@ namespace SmugSharpTest
         {
             var smugmug = new SmugMug(ApiKey, ApiSecret, CallbackUrl);
 
-            var requestToken = await smugmug.Authentication.GetRequestToken();
+            var requestToken = await smugmug.GetRequestToken();
 
             Assert.IsNotNull(requestToken, "Request token should be not null.");
 
-            var cachedRT = await smugmug.Authentication.GetRequestToken();
+            var cachedRT = await smugmug.GetRequestToken();
 
             Assert.AreEqual(requestToken, cachedRT);
         }
@@ -26,9 +26,9 @@ namespace SmugSharpTest
         public async Task TestAuthorizationUrl()
         {
             var smugmug = new SmugMug(ApiKey, ApiSecret, CallbackUrl);
-            var requestToken = await smugmug.Authentication.GetRequestToken();
+            var requestToken = await smugmug.GetRequestToken();
 
-            var authUrl = await smugmug.Authentication.GetAuthorizationUrl();
+            var authUrl = await smugmug.GetAuthorizationUrl();
 
             Assert.IsNotNull(authUrl);
             Assert.IsTrue(authUrl.Contains("oauth_token"));
@@ -45,16 +45,16 @@ namespace SmugSharpTest
             var over = 100.0;
             var under = -100.0;
 
-            Assert.AreEqual(smugmug.Authentication.ViewportScale, min, "Viewport should default to 0.0");
+            Assert.AreEqual(smugmug.ViewportScale, min, "Viewport should default to 0.0");
 
-            smugmug.Authentication.ViewportScale = max;           
-            Assert.AreEqual(smugmug.Authentication.ViewportScale, max);
+            smugmug.ViewportScale = max;           
+            Assert.AreEqual(smugmug.ViewportScale, max);
 
-            smugmug.Authentication.ViewportScale = over;
-            Assert.AreEqual(smugmug.Authentication.ViewportScale, max);
+            smugmug.ViewportScale = over;
+            Assert.AreEqual(smugmug.ViewportScale, max);
 
-            smugmug.Authentication.ViewportScale = under;
-            Assert.AreEqual(smugmug.Authentication.ViewportScale, min);
+            smugmug.ViewportScale = under;
+            Assert.AreEqual(smugmug.ViewportScale, min);
         }
     }
 }

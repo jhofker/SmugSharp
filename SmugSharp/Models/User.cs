@@ -162,7 +162,7 @@ namespace SmugSharp.Models
         public async Task<Image> GetBioImage()
         {
             var bioImageUrl = $"{SmugMug.BaseUrl}{BioImageUri}";
-            var response = await SmugMug.GetResponseWithHeaders(bioImageUrl);
+            var response = await SmugMug.GetResponseForProtectedRequest(bioImageUrl);
 
             return Image.FromJson(response);
         }
@@ -170,7 +170,7 @@ namespace SmugSharp.Models
         public async Task<Node> GetRootNode()
         {
             var rootNodeUrl = $"{SmugMug.BaseUrl}{NodeUri}";
-            var response = await SmugMug.GetResponseWithHeaders(rootNodeUrl);
+            var response = await SmugMug.GetResponseForProtectedRequest(rootNodeUrl);
 
             return Node.FromJson(response);
         }

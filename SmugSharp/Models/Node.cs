@@ -119,7 +119,7 @@ namespace SmugSharp.Models
         private async Task<List<Node>> GetChildren()
         {
             var rootNodeUrl = $"{SmugMug.BaseUrl}{ChildNodesUri}";
-            var response = await SmugMug.GetResponseWithHeaders(rootNodeUrl);
+            var response = await SmugMug.GetResponseForProtectedRequest(rootNodeUrl);
 
             return Node.ListFromJson(response);
         }

@@ -14,8 +14,7 @@ namespace SmugSharpTest
             var smugmug = new SmugMug(ApiKey, ApiSecret, CallbackUrl);
 
             Assert.IsNotNull(smugmug, "SmugMug should not be null after constructing.");
-            Assert.IsNotNull(smugmug.Authentication, "SmugMug Authentication should not be null.");
-            Assert.AreEqual(ApiKey, smugmug.ApiKey, "API key should be kept.");
+            Assert.AreEqual(ApiKey, smugmug.ConsumerKey, "API key should be kept.");
         }
 
         [TestMethod]
@@ -24,7 +23,7 @@ namespace SmugSharpTest
             var smugmug = new SmugMug(AccessToken, AccessTokenSecret, ApiKey, ApiSecret, CallbackUrl);
 
             var authUserUrl = $"{SmugMug.BaseApiUrl}!authuser";
-            var response = await SmugMug.GetResponseWithHeaders(authUserUrl);
+            var response = await SmugMug.GetResponseForProtectedRequest(authUserUrl);
 
             Assert.IsFalse(response.Contains("\"Code\":4"));
         }
@@ -35,7 +34,7 @@ namespace SmugSharpTest
             var smugmug = new SmugMug(AccessToken, AccessTokenSecret, ApiKey, ApiSecret, CallbackUrl);
 
             var authUserUrl = $"{SmugMug.BaseApiUrl}/user/cmac";
-            var response = await SmugMug.GetResponseWithHeaders(authUserUrl);
+            var response = await SmugMug.GetResponseForProtectedRequest(authUserUrl);
 
             Assert.IsFalse(response.Contains("\"Code\":4"));
         }
