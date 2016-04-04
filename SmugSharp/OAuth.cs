@@ -50,46 +50,30 @@ namespace OAuth
         /// <param name="secretKey">The secret half of the api key.</param>
         /// <param name="exchangeStep">Indicates whether or not to include the token secret when generating the signing key.</param>
         /// <returns>A signed url</returns>
-        public static string CalculateOAuthSignedUrl(Dictionary<string, string> parameters, string oauthTokenSecret, string url, string secretKey, bool exchangeStep)
+        public static string CalculateOAuthSignedUrl(Dictionary<string, string> parameters, string oauthTokenSecret, string url, string secretKey)
         {
-            var baseString = new StringBuilder();
-            var sortedParams = new SortedDictionary<string, string>();
+            string baseString;
+            var signature = GetSignature("POST", url, parameters, secretKey, oauthTokenSecret, out baseString);
 
-            foreach (var param in parameters.OrderBy(p => p.Key))
-            {
-                sortedParams.Add(param.Key, param.Value);
-            }
+            return $"{url}?{baseString.ToString()}&oauth_signature={Uri.EscapeDataString(signature)}";
+        }
 
-            foreach (var param in sortedParams)
-            {
-                baseString.Append(param.Key);
-                baseString.Append("=");
-                baseString.Append(Uri.EscapeDataString(param.Value));
-                baseString.Append("&");
-            }
 
-            //removing the extra ampersand 
-            baseString.Remove(baseString.Length - 1, 1);
-            var baseStringForSig = "POST&" + Uri.EscapeDataString(url) + "&" + Uri.EscapeDataString(baseString.ToString());
+        /// <summary>
+        /// Generates a HMAC-SHA1 signature for a given set of parameters
+        /// </summary>
+        /// <param name="method">The HTTP method that will be used. (GET, POST, PATCH, PUT, DELETE)</param>
+        /// <param name="url">The destination url.</param>
+        /// <param name="parameters">Data that will be included in the request</param>
+        /// <param name="apiSecret">The Api secret. Used for signing.</param>
+        /// <param name="secretKey">The access token secret. Used for signing.</param>
+        /// <returns></returns>
+        public static string GetSignature(string method, string url, IDictionary<string, string> parameters, string apiSecret, string secretKey)
+        {
+            string paramString;
+            var signature = GetSignature(method, url, parameters, apiSecret, secretKey, out paramString);
 
-            //calculating the signature 
-            var HmacSha1Provider = MacAlgorithmProvider.OpenAlgorithm("HMAC_SHA1");
-
-            IBuffer keyMaterial;
-            if (exchangeStep)
-            {
-                keyMaterial = CryptographicBuffer.ConvertStringToBinary(secretKey + "&" + oauthTokenSecret, BinaryStringEncoding.Utf8);
-            }
-            else
-            {
-                keyMaterial = CryptographicBuffer.ConvertStringToBinary(secretKey + "&", BinaryStringEncoding.Utf8);
-            }
-
-            var cryptoKey = HmacSha1Provider.CreateKey(keyMaterial);
-            var dataString = CryptographicBuffer.ConvertStringToBinary(baseStringForSig, BinaryStringEncoding.Utf8);
-
-            return url + "?" + baseString.ToString() + "&oauth_signature=" +
-                Uri.EscapeDataString(CryptographicBuffer.EncodeToBase64String(CryptographicEngine.Sign(cryptoKey, dataString)));
+            return signature;
         }
 
         /// <summary>
@@ -97,21 +81,40 @@ namespace OAuth
         /// </summary>
         /// <param name="method">The HTTP method that will be used. (GET, POST, PATCH, PUT, DELETE)</param>
         /// <param name="url">The destination url.</param>
-        /// <param name="data">Data that will be included in the request</param>
+        /// <param name="parameters">Data that will be included in the request</param>
         /// <param name="apiSecret">The Api secret. Used for signing.</param>
         /// <param name="secretKey">The access token secret. Used for signing.</param>
+        /// <param name="parameterString">The parameters as a string of encoded key=value pairs concatenated.</param>
         /// <returns></returns>
-        public static string GetSignature(string method, string url, string data, string apiSecret, string secretKey)
+        public static string GetSignature(string method, string url, IDictionary<string, string> parameters, string apiSecret, string secretKey, out string parameterString)
         {
+            var baseString = new StringBuilder();
+
+            var i = 0;
+            foreach (var param in parameters.OrderBy(p => p.Key))
+            {
+                baseString.Append($"{Uri.EscapeDataString(param.Key)}={Uri.EscapeDataString(param.Value)}");
+                if (parameters.Count - 1 > i)
+                {
+                    baseString.Append("&");
+                    i++;
+                }
+            }
+
+            parameterString = baseString.ToString();
+
             var HmacSha1Provider = MacAlgorithmProvider.OpenAlgorithm(MacAlgorithmNames.HmacSha1);
 
-            var keyMaterial = CryptographicBuffer.ConvertStringToBinary(apiSecret + "&" + secretKey, BinaryStringEncoding.Utf8);
+            var keyMaterial = CryptographicBuffer.ConvertStringToBinary(
+                $"{Uri.EscapeDataString(apiSecret)}&{Uri.EscapeDataString(secretKey ?? string.Empty)}",
+                BinaryStringEncoding.Utf8);
             var cryptoKey = HmacSha1Provider.CreateKey(keyMaterial);
 
-            var baseStringForSig = $"{method}&{Uri.EscapeDataString(url)}&{Uri.EscapeDataString(data)}";
+            var baseStringForSig = $"{method}&{Uri.EscapeDataString(url)}&{Uri.EscapeDataString(parameterString)}";
             var dataString = CryptographicBuffer.ConvertStringToBinary(baseStringForSig, BinaryStringEncoding.Utf8);
 
-            return Uri.EscapeDataString(CryptographicBuffer.EncodeToBase64String(CryptographicEngine.Sign(cryptoKey, dataString)));
+            var signature = CryptographicBuffer.EncodeToBase64String(CryptographicEngine.Sign(cryptoKey, dataString));
+            return signature;
         }
 
         /// <summary>
