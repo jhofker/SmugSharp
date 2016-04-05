@@ -161,10 +161,26 @@ namespace SmugSharp.Models
 
         public async Task<Image> GetBioImage()
         {
-            var bioImageUrl = $"{SmugMug.BaseUrl}{BioImageUri}";
-            var response = await SmugMug.GetResponseForProtectedRequest(bioImageUrl);
+            var url = $"{SmugMug.BaseUrl}{BioImageUri}";
+            var response = await SmugMug.GetResponseForProtectedRequest(url);
 
-            return Image.FromJson(response);
+            return Image.FromJson(response, "BioImage");
+        }
+
+        public async Task<Image> GetCoverImage()
+        {
+            var url = $"{SmugMug.BaseUrl}{CoverImageUri}";
+            var response = await SmugMug.GetResponseForProtectedRequest(url);
+
+            return Image.FromJson(response, "CoverImage");
+        }
+
+        public async Task<List<Image>> GetRecentImages()
+        {                     
+            var url = $"{SmugMug.BaseUrl}{CoverImageUri}";
+            var response = await SmugMug.GetResponseForProtectedRequest(url);
+
+            return Image.ListFromJson(response);
         }
 
         public async Task<Node> GetRootNode()
