@@ -39,16 +39,70 @@ namespace SmugSharp.Models
         public string ImageKey { get; set; }
         public string ArchivedUri { get; set; }
         public long ArchivedSize { get; set; }
-        public string ArchivedMD5 { get; set; }       
+        public string ArchivedMD5 { get; set; }
 
-        public static Image FromJson(string response)
+        public string ImageUri { get; set; }
+        public string ImageSizesUri { get; set; }
+
+        public static Image FromJson(string response, string property)
         {
             var responseObj = JObject.Parse(response);
-            var jObj = responseObj["Response"]["BioImage"];
+            var jObj = responseObj["Response"][property];
+            var jUris = jObj["Uris"];
 
-            var image = JsonConvert.DeserializeObject<Image>(jObj.ToString());
-
+            Image image = null;
+            if (jObj != null)
+            {
+                image = JsonConvert.DeserializeObject<Image>(jObj.ToString());
+                image.ImageUri = jUris["Image"]["Uri"].ToString();
+                image.ImageSizesUri = jUris["ImageSizes"]["Uri"].ToString();
+            }
             return image;
         }
+
+        public static List<Image> ListFromJson(string response)
+        {
+            var responseObj = JObject.Parse(response);
+            var jObj = responseObj["Response"]["Image"];
+
+            List<Image> images = null;
+            if (jObj != null)
+            {
+                var imageArray = JsonConvert.DeserializeObject<Image[]>(jObj.ToString());
+                images = imageArray.ToList();
+            }
+
+            return images;
+        }
+
+        public async Task<ImageSizes> GetSizes()
+        {
+            var response = await SmugMug.GetResponseForProtectedRequest($"{SmugMug.BaseUrl}{ImageSizesUri}");
+            var responseObj = JObject.Parse(response);
+            var jObj = responseObj["Response"]["ImageSizes"];
+
+            ImageSizes sizes = null;
+            if (jObj != null)
+            {
+                sizes = JsonConvert.DeserializeObject<ImageSizes>(jObj.ToString());
+            }
+
+            return sizes;
+        }
+    }
+
+    public class ImageSizes
+    {
+        public string LargeImageUrl { get; set; }
+        public string LargestImageUrl { get; set; }
+        public string MediumImageUrl { get; set; }
+        public string OriginalImageUrl { get; set; }
+        public string SmallImageUrl { get; set; }
+        public string ThumbImageUrl { get; set; }
+        public string TinyImageUrl { get; set; }
+        public string X2LargeImageUrl { get; set; }
+        public string X3LargeImageUrl { get; set; }
+        public string XLargeImageUrl { get; set; }
+
     }
 }
