@@ -193,8 +193,7 @@ namespace OAuth
 
             foreach (var parameter in parameters.Where(parameter =>
                                                        !IsNullOrBlank(parameter.Name) &&
-                                                       !IsNullOrBlank(parameter.Value) &&
-                                                       (parameter.Name.StartsWith("oauth_") || parameter.Name.StartsWith("x_auth_"))))
+                                                       !IsNullOrBlank(parameter.Value)))
             {
                 count++;
                 var format = count < parameters.Count ? "{0}={1}&" : "{0}={1}";
