@@ -163,8 +163,8 @@ namespace SmugSharp.Models
         {
             var url = $"{SmugMug.BaseUrl}{BioImageUri}";
             var response = await SmugMug.GetResponseForProtectedRequest(url);
-
-            return Image.FromJson(response, "BioImage");
+            var image = await Image.FromJson(response, "BioImage");
+            return image;
         }
 
         public async Task<Image> GetCoverImage()
@@ -172,15 +172,36 @@ namespace SmugSharp.Models
             var url = $"{SmugMug.BaseUrl}{CoverImageUri}";
             var response = await SmugMug.GetResponseForProtectedRequest(url);
 
-            return Image.FromJson(response, "CoverImage");
+            var image = await Image.FromJson(response, "CoverImage");
+            return image;
         }
 
-        public async Task<List<Image>> GetRecentImages()
-        {                     
-            var url = $"{SmugMug.BaseUrl}{CoverImageUri}";
-            var response = await SmugMug.GetResponseForProtectedRequest(url);
+        public async Task<List<Image>> GetRecentImages(int count = 10, int start = 1)
+        {
+            // Don't include these on the request if they're the default values.
+            //var getParams = start != 1 ? $"start={start}" : string.Empty;
+            //getParams += getParams.Any() ? "&" : string.Empty;
+            //getParams += count != 10 ? $"count={count}" : string.Empty;
+            //getParams = getParams.Any() ? $"?{getParams}" : string.Empty;
 
-            return Image.ListFromJson(response);
+            var url = $"{SmugMug.BaseUrl}{UserRecentImagesUri}";
+            var extraParams = new Dictionary<string, string>();
+            extraParams.Add("count", count.ToString());
+            extraParams.Add("start", start.ToString());
+            var response = await SmugMug.GetResponseForProtectedRequest(url, extraParams: extraParams);
+
+            var images = await Image.ListFromJson(response);
+            var pageInformation = PageInformation.FromJson(response);
+
+            //while (images.Count < count && pageInformation.Total > count)
+            //{
+            //    url = $"{SmugMug.BaseUrl}{pageInformation.NextPage}";
+            //    response = await SmugMug.GetResponseForProtectedRequest(url);
+            //    images = images.Union(Image.ListFromJson(response)).ToList();
+            //    pageInformation = PageInformation.FromJson(response);
+            //}
+
+            return images;
         }
 
         public async Task<Node> GetRootNode()
@@ -188,7 +209,8 @@ namespace SmugSharp.Models
             var rootNodeUrl = $"{SmugMug.BaseUrl}{NodeUri}";
             var response = await SmugMug.GetResponseForProtectedRequest(rootNodeUrl);
 
-            return Node.FromJson(response);
+            var node = await Node.FromJson(response);
+            return node;
         }
     }
 }
