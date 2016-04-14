@@ -44,32 +44,47 @@ namespace SmugSharp.Models
         public string ImageUri { get; set; }
         public string ImageSizesUri { get; set; }
 
-        public static Image FromJson(string response, string property)
+        public ImageSizes Sizes { get; set; }
+
+        public async static Task<Image> FromJson(string response, string property = "Image")
         {
             var responseObj = JObject.Parse(response);
             var jObj = responseObj["Response"][property];
-            var jUris = jObj["Uris"];
 
             Image image = null;
             if (jObj != null)
             {
-                image = JsonConvert.DeserializeObject<Image>(jObj.ToString());
-                image.ImageUri = jUris["Image"]["Uri"].ToString();
-                image.ImageSizesUri = jUris["ImageSizes"]["Uri"].ToString();
+                image = await FromJsonObject(jObj);
             }
             return image;
         }
 
-        public static List<Image> ListFromJson(string response)
+        public async static Task<Image> FromJsonObject(JToken jObj)
+        {
+            Image image = null;
+            var jUris = jObj["Uris"];
+            image = JsonConvert.DeserializeObject<Image>(jObj.ToString());
+            image.ImageSizesUri = jUris["ImageSizes"]["Uri"].ToString();
+            if (!string.IsNullOrWhiteSpace(image.ImageSizesUri))
+            {
+                await image.GetSizes();
+            }
+            return image;
+        }
+
+        public async static Task<List<Image>> ListFromJson(string response)
         {
             var responseObj = JObject.Parse(response);
-            var jObj = responseObj["Response"]["Image"];
+            var jObjs = responseObj["Response"]["Image"].Children().ToList();
 
-            List<Image> images = null;
-            if (jObj != null)
-            {
-                var imageArray = JsonConvert.DeserializeObject<Image[]>(jObj.ToString());
-                images = imageArray.ToList();
+            List<Image> images = new List<Image>();
+            if (jObjs != null)
+            {                                          
+                Parallel.ForEach(jObjs, async j =>
+                {
+                    var image = await FromJsonObject(j);
+                    images.Add(image);
+                });
             }
 
             return images;
@@ -77,17 +92,19 @@ namespace SmugSharp.Models
 
         public async Task<ImageSizes> GetSizes()
         {
-            var response = await SmugMug.GetResponseForProtectedRequest($"{SmugMug.BaseUrl}{ImageSizesUri}");
-            var responseObj = JObject.Parse(response);
-            var jObj = responseObj["Response"]["ImageSizes"];
-
-            ImageSizes sizes = null;
-            if (jObj != null)
+            if (!string.IsNullOrWhiteSpace(ImageSizesUri))
             {
-                sizes = JsonConvert.DeserializeObject<ImageSizes>(jObj.ToString());
+                var response = await SmugMug.GetResponseForProtectedRequest($"{SmugMug.BaseUrl}{ImageSizesUri}");
+                var responseObj = JObject.Parse(response);
+                var jObj = responseObj["Response"]["ImageSizes"];
+
+                if (jObj != null)
+                {
+                    Sizes = JsonConvert.DeserializeObject<ImageSizes>(jObj.ToString());
+                }
             }
 
-            return sizes;
+            return Sizes;
         }
     }
 
