@@ -300,27 +300,32 @@ namespace SmugSharp
         /// <param name="url">The destination url</param>
         /// <returns>The response from the request</returns>
         /// <remarks>Will likely go away in the future.</remarks>
-        public static async Task<string> GetResponseForProtectedRequest(string url, string method = "GET", Dictionary<string, string> extraHeaders = null, string postContent = null)
+        public static async Task<string> GetResponseForProtectedRequest(string url, string method = "GET", Dictionary<string, string> extraHeaders = null, string postContent = null, Dictionary<string, string> extraParams = null)
         {
             var client = OAuthRequest.ForProtectedResource(method, Instance.ConsumerKey, Instance.ConsumerSecret, Instance.AccessToken, Instance.AccessTokenSecret);
             client.RequestUrl = url;
 
-            var headers = client.GetAuthorizationHeader();
-
             var request = new HttpClient();
+            if (extraParams != null)
+            {
+                var authedUrl = client.GetAuthorizationQuery(extraParams);
+                client.RequestUrl = $"{url}?{authedUrl}";
+            } 
 
+            var headers = client.GetAuthorizationHeader();  
             request.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue(
                     "OAuth",
-                    headers);
+                    headers);    
+
             request.DefaultRequestHeaders.Add("Accept", "application/json");
             if (method == "POST")
             {
                 request.DefaultRequestHeaders.Add("Content-Type", "application/json");
             }
 
-            var response = method == "GET" ? await request.GetAsync(url) :
-                           method == "POST" ? await request.PostAsync(url, new StringContent(postContent ?? string.Empty)) : null;
+            var response = method == "GET" ? await request.GetAsync(client.RequestUrl) :
+                           method == "POST" ? await request.PostAsync(client.RequestUrl, new StringContent(postContent ?? string.Empty)) : null;
 
             string httpResponse = null;
             if (response != null)
