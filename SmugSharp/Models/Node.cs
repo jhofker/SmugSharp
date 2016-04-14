@@ -22,6 +22,10 @@ namespace SmugSharp.Models
 
         public DateTime DateModified { get; set; }
 
+        public Image HighlightImage { get; set; }
+        public string Name { get; set; }
+
+
         /// <summary>
         /// Human-readable description for this node. 
         /// May contain basic HTML. Some node types display this to the user; 
@@ -118,10 +122,26 @@ namespace SmugSharp.Models
 
         private async Task<List<Node>> GetChildren()
         {
+            if (!HasChildren)
+            {
+                return new List<Node>();
+            }
+
             var rootNodeUrl = $"{SmugMug.BaseUrl}{ChildNodesUri}";
             var response = await SmugMug.GetResponseForProtectedRequest(rootNodeUrl);
 
-            return Node.ListFromJson(response);
+            children = await ListFromJson(response);
+            return Children;
+        }
+
+        private async Task<Image> GetHighlight()
+        {
+            if (!string.IsNullOrWhiteSpace(HighlightImageUri) && HighlightImage == null)
+            {
+                var response = await SmugMug.GetResponseForProtectedRequest($"{SmugMug.BaseUrl}{HighlightImageUri}");
+                HighlightImage = await Image.FromJson(response);
+            }
+            return HighlightImage;
         }
 
         #region Private Uris for fetching additional information
@@ -134,17 +154,17 @@ namespace SmugSharp.Models
         private string NodeGrantsUri { get; set; }
         #endregion
 
-        public static Node FromJson(string json, bool isFullResponse = true)
+        public async static Task<Node> FromJson(string json)
         {
             var responseObj = JObject.Parse(json);
             var jObj = responseObj["Response"]["Node"];
 
-            var node = ConvertNode(jObj);
+            var node = await ConvertNode(jObj);
 
             return node;
         }
 
-        private static Node ConvertNode(JToken jNode)
+        private async static Task<Node> ConvertNode(JToken jNode)
         {
             var node = JsonConvert.DeserializeObject<Node>(jNode.ToString());
 
@@ -154,33 +174,57 @@ namespace SmugSharp.Models
             node.SmugSearchable = searchable.ToLower().Contains("inherit") ?
                 Searchable.Inherit :
                 (Searchable)Enum.Parse(typeof(Searchable), searchable);
-            node.WorldSearchable = searchable.ToLower().Contains("inherit") ?
+            node.WorldSearchable = worldSearchable.ToLower().Contains("inherit") ?
                 WorldSearchable.Inherit :
                 (WorldSearchable)Enum.Parse(typeof(WorldSearchable), worldSearchable);
 
             var nodeUris = jNode["Uris"];
             if (nodeUris != null)
             {
-                node.FolderByIdUri = nodeUris["FolderByID"]["Uri"].ToString();
-                node.ParentNodesUri = nodeUris["ParentNodes"]["Uri"].ToString();
-                node.UserUri = nodeUris["User"]["Uri"].ToString();
-                node.HighlightImageUri = nodeUris["HighlightImage"]["Uri"].ToString();
-                node.ChildNodesUri = nodeUris["ChildNodes"]["Uri"].ToString();
-                node.MoveNodesUri = nodeUris["MoveNodes"]["Uri"].ToString();
-                node.NodeGrantsUri = nodeUris["NodeGrants"]["Uri"].ToString();
+                node.FolderByIdUri = UriAtPath(nodeUris, "FolderByID");
+                node.ParentNodesUri = UriAtPath(nodeUris, "ParentNodes");
+                node.UserUri = UriAtPath(nodeUris, "User");
+                node.HighlightImageUri = UriAtPath(nodeUris, "HighlightImage");
+                node.ChildNodesUri = UriAtPath(nodeUris, "ChildNodes");
+                node.MoveNodesUri = UriAtPath(nodeUris, "MoveNodes");
+                node.NodeGrantsUri = UriAtPath(nodeUris, "NodeGrants");
             }
+
+            await node.GetChildren();
+            await node.GetHighlight();
 
             return node;
         }
 
-        public static List<Node> ListFromJson(string response)
+        private static string UriAtPath(JToken uris, string name)
+        {
+            var uri = string.Empty;
+
+            if (uris != null)
+            {
+                var token = uris[name];
+                if (token != null)
+                {
+                    var uriToken = token["Uri"];
+                    if (uriToken != null)
+                    {
+                        uri = uriToken.ToString();
+                    }
+                }
+            }
+
+            return uri;
+        }
+
+        public async static Task<List<Node>> ListFromJson(string response)
         {
             var responseObj = JObject.Parse(response);
             var jObjs = responseObj["Response"]["Node"];
 
-            var nodes = jObjs.Select(n => ConvertNode(n)).ToList();
+            var nodeTasks = jObjs.Select(n => ConvertNode(n));
+            var nodes = await Task.WhenAll(nodeTasks);
 
-            return nodes;
+            return nodes.ToList();
         }
     }
 }
