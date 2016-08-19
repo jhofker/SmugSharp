@@ -43,8 +43,11 @@ namespace SmugSharp.Models
 
         public string ImageUri { get; set; }
         public string ImageSizesUri { get; set; }
+        public string ImageAlbumUri { get; set; }
+
 
         public ImageSizes Sizes { get; set; }
+        public Album ImageAlbum { get; set; }
 
         public async static Task<Image> FromJson(string response, string property = "Image")
         {
@@ -65,6 +68,7 @@ namespace SmugSharp.Models
             var jUris = jObj["Uris"];
             image = JsonConvert.DeserializeObject<Image>(jObj.ToString());
             image.ImageSizesUri = jUris["ImageSizes"]["Uri"].ToString();
+            image.ImageAlbumUri = jUris["ImageAlbum"]["Uri"].ToString();
             if (!string.IsNullOrWhiteSpace(image.ImageSizesUri))
             {
                 await image.GetSizes();
@@ -105,6 +109,23 @@ namespace SmugSharp.Models
             }
 
             return Sizes;
+        }
+
+        public async Task<Album> GetAlbum()
+        {
+            if (!string.IsNullOrWhiteSpace(ImageAlbumUri))
+            {
+                var response = await SmugMug.GetResponseForProtectedRequest($"{SmugMug.BaseUrl}{ImageAlbumUri}");
+                var responseObj = JObject.Parse(response);
+                var jObj = responseObj["Response"]["Album"];
+
+                if (jObj != null)
+                {
+                    ImageAlbum = JsonConvert.DeserializeObject<Album>(jObj.ToString());
+                }
+            }
+
+            return ImageAlbum;
         }
     }
 

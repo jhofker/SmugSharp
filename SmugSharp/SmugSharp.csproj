@@ -115,6 +115,7 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\Album.cs" />
     <Compile Include="Models\Image.cs" />
     <Compile Include="Models\Node.cs" />
     <Compile Include="Models\PageInformation.cs" />
